@@ -1,0 +1,88 @@
+/*********
+  Door to Energy
+
+  Purpose :
+    Code for Door to energy, a device harvesting free energy from human-door interactions
+
+  Features:
+    Turbine input
+    Led output
+    ESP8266 Web server
+
+  Authors:
+    Imani Muhammad-Graham
+    Qiang Han
+    Yuvan Sriram Murugan
+    Visveswaran Dharmaraj
+*********/
+#include <ESP8266WiFi.h>
+#include <ESP8266WebServer.h>
+
+// Connect to UB_Devices network for hosting web server
+const char *ssid = "UB_Devices";
+const char *password = "goubbulls";
+
+// Set up Web server
+ESP8266WebServer server(80);
+
+const int turbine_input = A0;  // ESP8266 Analog Pin ADC0 = A0
+int turbine_voltage_sensor = 0;  // value read from the turbine input
+int LED = 5; // Assign LED pin
+double dc_motor_resistance = .7; // Measured resistance level of .7 by volt meter
+
+void setup() {
+  // initialize serial communication at 115200
+  Serial.begin(115200);
+  
+  // initialize GPIO 5 (LED) as an output
+  pinMode(LED, OUTPUT);
+
+  // Connect to Wi-Fi
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.println("Connecting to WiFi...");
+  }
+  Serial.println("Connected to WiFi!");
+  
+  // Define server routes
+  server.on("/", HTTP_GET, handleRoot);
+  server.on("/update", HTTP_POST, handleUpdate);
+  // Start server
+  server.begin();
+  Serial.println("HTTP server started");
+}
+
+void handleRoot() { 
+  server.send(200, "text/html", "Hello from ESP8266!"); 
+}
+
+void handleUpdate() { 
+    String data = server.arg("data"); 
+    Serial.println("Received data: " + data); 
+    // Handle the received data as needed 
+    server.send(200, "text/plain", "Data received successfully"); 
+
+} 
+
+void loop() {
+
+  // read the analog in value
+  turbine_voltage_sensor = analogRead(turbine_input);
+  // Serial.print("\nMac address");
+  // Serial.print(WiFi.macAddress());
+ 
+  // print the readings in the Serial Monitor
+  Serial.print("\nsensor = ");
+  Serial.print(turbine_voltage_sensor);
+
+  // Toggle LED based on sensor value
+  if (turbine_voltage_sensor > 5){
+    digitalWrite(LED, HIGH); // turn the LED on
+  }
+  else {
+    digitalWrite(LED, LOW); // turn the LED off
+  }
+  
+  delay(100);
+}
